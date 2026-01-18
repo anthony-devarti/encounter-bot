@@ -14,6 +14,7 @@ from roller import roll_from_table
 from region_ui import RegionSelectView
 from config import README_URL
 from delete_cmd import IrreversibleDeleteView, WARNING_TEXT_STAGE_1
+from travel_ui import TravelModeView
 
 
 INTENTS = discord.Intents.default()
@@ -306,6 +307,15 @@ async def irreversably_delete_cmd(interaction: discord.Interaction):
     )
     await interaction.response.send_message(WARNING_TEXT_STAGE_1, view=view, ephemeral=True)
 
+# Travel Estimator
+@client.tree.command(name="travel", description="Estimate travel time and encounter risk.")
+async def travel_cmd(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        "Choose travel mode:",
+        view=TravelModeView(),
+        ephemeral=True
+    )
+
 # Help Explain the bot's usage
 @client.tree.command(name="help", description="Learn to use the encounter bot.")
 async def help_cmd(interaction: discord.Interaction):
@@ -318,8 +328,9 @@ async def help_cmd(interaction: discord.Interaction):
             "2) Run **/encounter** to roll an encounter.\n"
             "If multiple regions exist, you'll pick one (buttons up to 5, dropdown for 6+).\n"
             "3) Run **/download** to export the current tables as XLSX for editing. \n"
-            "4) Run **/template** to download a blank export table with setup instructions \n"
-            "5) Run **/irreversably_delete** to delete all encounter tables. You better be sure this is what you want to do\n \n"
+            "4) Run **/travel** to show details about upcoming travel plans, like rations, time, and if an encounter should occur. \n"
+            "5) Run **/template** to download a blank export table with setup instructions \n"
+            "6) Run **/irreversably_delete** to delete all encounter tables. You better be sure this is what you want to do\n \n"
             
             "To edit your encounter tables, just download, edit the file in your editor of choice then upload your changed file.\n"
             "It's up to you to make sure that you keep the previous version of the tables in case you need to revert them."

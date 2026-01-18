@@ -1,8 +1,10 @@
 # Encounter Bot
 
-A Discord bot that rolls **random encounters** (and matching rewards) from a spreadsheet workbook.
+A Discord bot that rolls **random encounters** (and matching rewards) from a spreadsheet workbook **and** provides a **GM-focused travel and encounter-risk calculator**.
 
 No LLMs. No web integrations. No complex config UI. Your workbook *is* the config.
+
+---
 
 ## Features
 
@@ -14,8 +16,15 @@ No LLMs. No web integrations. No complex config UI. Your workbook *is* the confi
 - ✅ Download a blank annotated template using `/template`
 - ✅ “Two-click confirmation” permanent delete command (`/irreversably_delete`)
 - ✅ Simple permissions: server owners restrict GM commands via Discord settings
+- ✅ **Travel calculator** for overland journeys
+- ✅ **Random encounter risk estimation** during travel
+- ✅ Optional **one-click random encounter roll** after travel calculation
+
+---
 
 ## How It Works
+
+### Encounters
 
 When you run `/encounter`, the bot rolls:
 
@@ -24,6 +33,21 @@ When you run `/encounter`, the bot rolls:
 3. **Reward** from `Reward - <region_id> - <Type>`
 
 Encounter type drives the reward.
+
+---
+
+### Travel
+
+When you run `/travel`, the bot helps a GM answer:
+
+- How long a journey takes
+- How many rations are consumed
+- Whether a random encounter is likely
+- Optionally, whether a random encounter actually occurs
+
+The travel system is **purely mechanical**. It does not pull from the encounter tables unless the GM explicitly rolls for one.
+
+---
 
 ## Commands
 
@@ -36,7 +60,29 @@ Encounter type drives the reward.
 - **`/help`**  
   Shows short usage instructions and links to this README.
 
+---
+
 ### GM/Admin Commands
+
+- **`/travel`**  
+  Interactive travel calculator for GMs.
+
+  Flow:
+  1. Choose **Land** or **Sea** (sea travel currently stubbed)
+  2. Enter route details (hex counts, roads, unexplored areas)
+  3. If needed, break down off-road terrain
+  4. Receive:
+     - Travel time (days)
+     - Rations per character
+     - Random encounter probability
+  5. Optionally click **Roll for Random Encounter**
+     - Result appears as a follow-up message
+     - No automatic encounter is rolled unless requested
+
+  Notes:
+  - All travel UI is **ephemeral** (visible only to the GM)
+  - The encounter roll result is also ephemeral
+  - This command does **not** modify encounter tables or state
 
 - **`/import`**  
   Upload an XLSX workbook and import it into the bot database.
@@ -51,6 +97,8 @@ Encounter type drives the reward.
 - **`/irreversably_delete`**  
   Permanently deletes all imported encounter data for this server.  
   Requires 2 confirmation clicks.
+
+---
 
 ## Workbook Format (XLSX)
 
@@ -69,6 +117,8 @@ Rules:
 
 - `region_id` must be a **positive integer**
 - `region_name` is what appears in Discord UI
+
+---
 
 #### Required Sheets Per Region
 
@@ -100,6 +150,8 @@ and:
 
 **Important:** Type names are case and spacing sensitive because they must match the tab name exactly.
 
+---
+
 ### Non-Regional Workbook Layout (Optional)
 
 If you do not want regions, delete the `Regions` tab and use:
@@ -108,11 +160,15 @@ If you do not want regions, delete the `Regions` tab and use:
 - `Encounter - <Type>`
 - `Reward - <Type>`
 
+---
+
 ## Column Rules
 
 - All headers must be on **row 1**
 - Do not rename required columns
 - You can add extra columns (notes, tags, etc.) and the bot will ignore them
+
+---
 
 ## Roll Modes
 
@@ -123,49 +179,46 @@ Each sheet supports **one** roll mode. The bot auto-detects which mode is being 
 Use only:
 
 **Encounter Types sheet**
-
 - `type`
 
 **Encounter / Reward sheet**
-
 - `result`
 
 Every row has equal probability.
+
+---
 
 ### Weighted Mode
 
 Use:
 
 **Encounter Types sheet**
-
 - `weight` (positive integer)
 - `type`
 
 **Encounter / Reward sheet**
-
 - `weight` (positive integer)
 - `result`
 
 Higher weight means more likely.
+
+---
 
 ### Range Mode (dice table)
 
 Use:
 
 **Encounter Types sheet**
-
 - `min` (int)
 - `max` (int)
 - `type`
 
 **Encounter / Reward sheet**
-
 - `min` (int)
 - `max` (int)
 - `result`
 
 Rules:
-
 - ranges must not overlap
 - `min <= max`
 
@@ -177,6 +230,8 @@ Example:
 | 41 | 70 | Merchant |
 | 71 | 100 | Monster |
 
+---
+
 ### Important Rule: Don’t mix modes
 
 Don’t mix columns. For example:
@@ -184,17 +239,22 @@ Don’t mix columns. For example:
 - if a sheet has any `weight` values, it’s treated as weighted mode
 - if a sheet has `min/max`, it’s treated as range mode
 
+---
+
 ## Recommended Workflow
 
 1. Run **`/template`** and download the workbook template.
 2. Fill it out in Excel or Google Sheets (export to XLSX).
 3. Upload it with **`/import`**
 4. Test with **`/encounter`**
-5. Export current state with **`/download`** (useful for backups)
+5. Use **`/travel`** to plan journeys and determine encounter risk
+6. Export current state with **`/download`** (useful for backups)
+
+---
 
 ## Command Permissions (GM Only)
 
-By default, Discord may show slash commands to everyone in the server. This bot expects server owners/admins to restrict GM/admin commands via Discord’s command permissions.
+By default, Discord may show slash commands to everyone in the server. This bot expects server owners/admins to restrict GM commands via Discord’s command permissions.
 
 ### Restrict commands to the `GM` role
 
@@ -207,6 +267,7 @@ By default, Discord may show slash commands to everyone in the server. This bot 
    - `/download`
    - `/template`
    - `/irreversably_delete`
+   - `/travel`
 
 Disable access for `@everyone` and enable access for `GM`.
 
@@ -214,6 +275,8 @@ After this:
 
 - only users with the **GM** role will see those commands
 - players won’t see them or be able to run them
+
+---
 
 ## Template Workbook
 
