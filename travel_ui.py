@@ -4,6 +4,22 @@ from discord import ui
 from travel_estimator import calculate_travel
 from sea_travel_ui import SeaVesselView
 
+# ----- Land Vessel Selection -----
+class LandVesselView(ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+
+    @ui.button(label="🚶 On Foot", style=discord.ButtonStyle.primary)
+    async def foot(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_modal(
+            LandRouteModal(vessel_type="foot")
+        )
+
+    @ui.button(label="🐎 Mounted", style=discord.ButtonStyle.secondary)
+    async def mount(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_modal(
+            LandRouteModal(vessel_type="mount")
+        )
 
 # ---------- ENTRY VIEW ----------
 
@@ -13,7 +29,11 @@ class TravelModeView(ui.View):
 
     @ui.button(label="🧭 Land", style=discord.ButtonStyle.primary)
     async def land(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_modal(LandRouteModal())
+        await interaction.response.send_message(
+            "Choose vessel type:",
+            view=LandVesselView(),
+            ephemeral=True
+)
 
     @ui.button(label="⚓ Sea", style=discord.ButtonStyle.secondary)
     async def sea(self, interaction: discord.Interaction, button: ui.Button):
@@ -23,13 +43,16 @@ class TravelModeView(ui.View):
             ephemeral=True
 )
 
-
-# ---------- MODAL 1 ----------
+# ---------- Land MODAL 1 ----------
 
 class LandRouteModal(ui.Modal, title="Land Travel (1/2): Route"):
     total_hexes = ui.TextInput(label="Total hexes", default="0")
     road_hexes = ui.TextInput(label="Road hexes", default="0")
     unexplored_hexes = ui.TextInput(label="Unexplored hexes", default="0")
+    
+    def __init__(self, vessel_type: str):
+        super().__init__()
+        self.vessel_type = vessel_type
 
     async def on_submit(self, interaction: discord.Interaction):
         total = int(self.total_hexes.value)
@@ -40,6 +63,7 @@ class LandRouteModal(ui.Modal, title="Land Travel (1/2): Route"):
             "total_hexes": total,
             "road_hexes": road,
             "unexplored_hexes": unexplored,
+            "vessel_type": self.vessel_type
         }
 
         # ----- CASE 1: ALL ROAD -----
@@ -50,6 +74,8 @@ class LandRouteModal(ui.Modal, title="Land Travel (1/2): Route"):
                 hex_counts=hex_counts,
                 unexplored_hexes=unexplored,
                 explored_road_hexes=road,
+                vessel_type=self.vessel_type,
+                # vvv not incorporated yet vvv
                 forced_hours=0,
             )
 
@@ -71,6 +97,7 @@ class LandRouteModal(ui.Modal, title="Land Travel (1/2): Route"):
         await interaction.response.send_message(
             (
                 f"**Route Summary**\n"
+                f"- Travel method: **{self.vessel_type}**\n"
                 f"- Total hexes: **{total}**\n"
                 f"- Road hexes: **{road}**\n"
                 f"- Off-road hexes to allocate: **{off_road_required}**\n\n"
@@ -146,6 +173,7 @@ class LandOffRoadModal(ui.Modal):
             hex_counts=hex_counts,
             unexplored_hexes=unexplored,
             explored_road_hexes=road,
+            vessel_type=self.route_data['vessel_type'],
             forced_hours=0,
         )
 
@@ -176,6 +204,18 @@ class RetryOffRoadView(ui.View):
 def build_travel_embed(result: dict) -> discord.Embed:
     embed = discord.Embed(title="Travel Estimate")
 
+    vessel_type = result.get("vessel_type", "foot")
+    if vessel_type == "mount":
+        travel_method = "Mounted"
+    if vessel_type == "foot":
+        travel_method = "On Foot"
+    
+    embed.add_field(
+        name="Travel Method",
+        value=travel_method,
+        inline=True,
+    )
+    
     embed.add_field(
         name="Travel Time",
         value=f'{result["travel_days"]} day(s)',

@@ -21,6 +21,7 @@ def calculate_travel(
     hex_counts: dict,
     unexplored_hexes: int,
     explored_road_hexes: int,
+    vessel_type: str,
     forced_hours: int = 0,
 ):
     """
@@ -29,13 +30,22 @@ def calculate_travel(
     explored_road_hexes: explored road hexes on route
     forced_hours: extra travel hours beyond 8 (land only)
     """
+    
+    ### Travel Multiplier ###
+    if vessel_type == "foot" :
+        mult=1
+    elif vessel_type == "mount" :
+        mult = 2
+    else:
+        mult = 1 
 
     # ---------- NORMAL TRAVEL TIME ----------
     normal_days = 0.0
     for terrain, hexes in hex_counts.items():
         if hexes <= 0:
             continue
-        speed = HEXES_PER_DAY[terrain]
+        base_speed = HEXES_PER_DAY[terrain]
+        speed = base_speed * mult
         normal_days += hexes / speed
 
     total_days = math.ceil(normal_days)
@@ -72,10 +82,7 @@ def calculate_travel(
 
     total_checks = unexplored_hexes + explored_off_road_hexes + road_checks
 
-    # Cap encounters to one per day
-    effective_checks = min(total_checks, total_days)
-
-    encounter_probability = 1 - ((1 - ENCOUNTER_CHANCE) ** effective_checks)
+    encounter_probability = 1 - ((1 - ENCOUNTER_CHANCE) ** total_checks)
 
     # ---------- FORCED MARCH EXHAUSTION ----------
     exhaustion_saves = []
@@ -88,22 +95,6 @@ def calculate_travel(
         "rations_per_character": total_days,
         "encounter_checks": total_checks,
         "encounter_probability": round(encounter_probability, 4),
+        "vessel_type": vessel_type,
         "forced_march_saves": exhaustion_saves,
     }
-
-#testing
-if __name__ == "__main__":
-    result = calculate_travel(
-        hex_counts={
-            "road": 5,
-            "plains": 3,
-            "forest": 4,
-            "mountains": 2,
-        },
-        unexplored_hexes=3,
-        explored_road_hexes=2,
-        forced_hours=2,
-    )
-
-    for k, v in result.items():
-        print(f"{k}: {v}")
